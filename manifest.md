@@ -22,8 +22,9 @@ Unlike the [image index](image-index.md), which contains information about a set
 
 - **`mediaType`** *string*
 
-  This property is *reserved* for use, to [maintain compatibility](media-types.md#compatibility-matrix).
-  When used, this field contains the media type of this document, which differs from the [descriptor](descriptor.md#properties) use of `mediaType`.
+  This property SHOULD be used and [remain compatible](media-types.md#compatibility-matrix) with earlier versions of this specification and with other similar external formats.
+  When used, this field MUST contain the media type `application/vnd.oci.image.manifest.v1+json`.
+  This field usage differs from the [descriptor](descriptor.md#properties) use of `mediaType`.
 
 - **`config`** *[descriptor](descriptor.md)*
 
@@ -60,6 +61,7 @@ Unlike the [image index](image-index.md), which contains information about a set
         - [`application/vnd.oci.image.layer.nondistributable.v1.tar+gzip`](layer.md#gzip-media-types)
 
         Manifests concerned with portability SHOULD use one of the above media types.
+        An encountered `mediaType` that is unknown to the implementation MUST be ignored.
 
         Entries in this field will frequently use the `+gzip` types.
 
@@ -76,6 +78,7 @@ Unlike the [image index](image-index.md), which contains information about a set
 ```json,title=Manifest&mediatype=application/vnd.oci.image.manifest.v1%2Bjson
 {
   "schemaVersion": 2,
+  "mediaType": "application/vnd.oci.image.manifest.v1+json",
   "config": {
     "mediaType": "application/vnd.oci.image.config.v1+json",
     "size": 7023,

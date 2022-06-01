@@ -41,25 +41,25 @@ The following fields contain the primary properties that constitute a Descriptor
 
 - **`annotations`** *string-string map*
 
-    This OPTIONAL property contains arbitrary metadata for this descriptor.
-    This OPTIONAL property MUST use the [annotation rules](annotations.md#rules).
+  This OPTIONAL property contains arbitrary metadata for this descriptor.
+  This OPTIONAL property MUST use the [annotation rules](annotations.md#rules).
+
+- **`data`** *string*
+
+  This OPTIONAL property contains an embedded representation of the referenced content.
+  Values MUST conform to the Base 64 encoding, as defined in [RFC 4648][rfc4648-s4].
+  The decoded data MUST be identical to the referenced content and SHOULD be verified against the [`digest`](#digests) and `size` fields by content consumers.
+  See [Embedded Content](#embedded-content) for when this is appropriate.
 
 Descriptors pointing to [`application/vnd.oci.image.manifest.v1+json`](manifest.md) SHOULD include the extended field `platform`, see [Image Index Property Descriptions](image-index.md#image-index-property-descriptions) for details.
 
 ### Reserved
 
-The following field keys are reserved and MUST NOT be used by other specifications.
-
-- **`data`** *string*
-
-  This key is RESERVED for future versions of the specification.
-
-All other fields may be included in other OCI specifications.
 Extended _Descriptor_ field additions proposed in other OCI specifications SHOULD first be considered for addition into this specification.
 
 ## Digests
 
-The _digest_ property of a Descriptor acts as a content identifier, enabling [content addressability](http://en.wikipedia.org/wiki/Content-addressable_storage).
+The _digest_ property of a Descriptor acts as a content identifier, enabling [content addressability](https://en.wikipedia.org/wiki/Content-addressable_storage).
 It uniquely identifies content by taking a [collision-resistant hash](https://en.wikipedia.org/wiki/Cryptographic_hash_function) of the bytes.
 If the _digest_ can be communicated in a secure manner, one can verify content from an insecure source by recalculating the digest independently, ensuring the content has not been modified.
 
@@ -99,7 +99,7 @@ As an example, we can parameterize the encoding and algorithm as `multihash+base
 Before consuming content targeted by a descriptor from untrusted sources, the byte content SHOULD be verified against the digest string.
 Before calculating the digest, the size of the content SHOULD be verified to reduce hash collision space.
 Heavy processing before calculating a hash SHOULD be avoided.
-Implementations MAY employ [canonicalization](canonicalization.md#canonicalization) of the underlying content to ensure stable content identifiers.
+Implementations MAY employ [canonicalization](considerations.md#canonicalization) of the underlying content to ensure stable content identifiers.
 
 ### Digest calculations
 
@@ -145,11 +145,25 @@ Note that `[A-F]` MUST NOT be used here.
 
 #### SHA-512
 
-[SHA-512][rfc4634-s4.2] is a collision-resistant hash function which [may be more perfomant][sha256-vs-sha512] than [SHA-256](#sha-256) on some CPUs.
+[SHA-512][rfc4634-s4.2] is a collision-resistant hash function which [may be more performant][sha256-vs-sha512] than [SHA-256](#sha-256) on some CPUs.
 Implementations MAY implement SHA-512 digest verification for use in descriptors.
 
 When the _algorithm identifier_ is `sha512`, the _encoded_ portion MUST match `/[a-f0-9]{128}/`.
 Note that `[A-F]` MUST NOT be used here.
+
+## Embedded Content
+
+In many contexts, such as when downloading content over a network, resolving a descriptor to its content has a measurable fixed "roundtrip" latency cost.
+For large blobs, the fixed cost is usually inconsequential, as the majority of time will be spent actually fetching the content.
+For very small blobs, the fixed cost can be quite significant.
+
+Implementations MAY choose to embed small pieces of content directly within a descriptor to avoid roundtrips.
+
+Implementations MUST NOT populate the `data` field in situations where doing so would modify existing content identifiers.
+For example, a registry MUST NOT arbitrarily populate `data` fields within uploaded manifests, as that would modify the content identifier of those manifests.
+In contrast, a client MAY populate the `data` field before uploading a manifest, because the manifest would not yet have a content identifier in the registry.
+
+Implementations SHOULD consider portability when deciding whether to embed data, as some providers are known to refuse to accept or parse manifests that exceed a certain size.
 
 ## Examples
 
@@ -179,6 +193,7 @@ In the following example, the descriptor indicates that the referenced manifest 
 [rfc3986]: https://tools.ietf.org/html/rfc3986
 [rfc4634-s4.1]: https://tools.ietf.org/html/rfc4634#section-4.1
 [rfc4634-s4.2]: https://tools.ietf.org/html/rfc4634#section-4.2
+[rfc4648-s4]: https://tools.ietf.org/html/rfc4648#section-4
 [rfc6838]: https://tools.ietf.org/html/rfc6838
 [rfc6838-s4.2]: https://tools.ietf.org/html/rfc6838#section-4.2
 [rfc7230-s2.7]: https://tools.ietf.org/html/rfc7230#section-2.7
